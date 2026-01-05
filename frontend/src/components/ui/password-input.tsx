@@ -43,7 +43,6 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
           </span>
         </Button>
 
-        {/* CSS Trick untuk menyembunyikan default eye icon di Edge/IE */}
         <style>{`
 					.hide-password-toggle::-ms-reveal,
 					.hide-password-toggle::-ms-clear {
