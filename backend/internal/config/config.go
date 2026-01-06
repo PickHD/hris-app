@@ -24,7 +24,7 @@ type DatabaseConfig struct {
 
 type JWTConfig struct {
 	Secret    string
-	ExpiresIn string
+	ExpiresIn int
 }
 
 type ServerConfig struct {
@@ -62,7 +62,7 @@ func Load() *Config {
 		},
 		JWT: JWTConfig{
 			Secret:    getEnv("JWT_SECRET", "your-super-secret-jwt-key"),
-			ExpiresIn: getEnv("JWT_EXPIRES_IN", "24h"),
+			ExpiresIn: getEnvInt("JWT_EXPIRES_IN_HOUR", 24),
 		},
 		Server: ServerConfig{
 			Port: getEnvInt("SERVER_PORT", 8080),

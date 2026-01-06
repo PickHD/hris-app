@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hris-backend/internal/bootstrap"
 	"hris-backend/internal/routes"
+	"hris-backend/internal/seeder"
 	"hris-backend/pkg/logger"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 
 const (
 	httpServerMode = "http"
+	seedMode       = "seed"
 )
 
 // @title HRIS Backend
@@ -33,36 +35,35 @@ func main() {
 		mode = args[0]
 	}
 
+	envPaths := []string{
+		"../../../.env", "../../.env", "../.env", ".env", "/app/.env",
+	}
+
+	var loadErr error
+	for _, path := range envPaths {
+		if loadErr = godotenv.Load(path); loadErr == nil {
+			break
+		}
+	}
+
+	if loadErr != nil {
+		logger.Warn("Warning: .env file not found (this is OK in Docker, env vars will be used)")
+	}
+
+	appContainer, err := bootstrap.NewContainer()
+	if err != nil {
+		logger.Errorw("Failed to initialize application container: ", err)
+		os.Exit(1)
+	}
+	defer appContainer.Close()
+
 	switch mode {
+	case seedMode:
+		if err := seeder.Execute(appContainer.DB.GetDB()); err != nil {
+			logger.Errorw("Seeding failed: ", err)
+			os.Exit(1)
+		}
 	case httpServerMode:
-		// Try to load .env file - first check parent directories, then current directory
-		// This works both locally (with .env in root) and in Docker (env vars passed by compose)
-		envPaths := []string{
-			"../../../.env", // From backend/cmd/api to root
-			"../../.env",    // From backend/cmd to root
-			"../.env",       // From backend to root
-			".env",          // Current directory
-			"/app/.env",     // Docker container path
-		}
-
-		var loadErr error
-		for _, path := range envPaths {
-			if loadErr = godotenv.Load(path); loadErr == nil {
-				break // Successfully loaded
-			}
-		}
-
-		// Don't panic if .env is not found - in Docker, env vars are passed directly
-		if loadErr != nil {
-			logger.Warn("Warning: .env file not found (this is OK in Docker, env vars will be used)")
-		}
-
-		appContainer, err := bootstrap.NewContainer()
-		if err != nil {
-			logger.Errorw("Failed to initialize application container: ", err)
-		}
-		defer appContainer.Close()
-
 		logger.Info("Starting HRIS API Server...")
 
 		appRouter := routes.ServeHTTP(appContainer)

@@ -6,10 +6,10 @@ import (
 
 type (
 	BaseResponse struct {
-		Messages string `json:"messages"`
-		Data     any    `json:"data"`
-		Error    error  `json:"error"`
-		Meta     *Meta  `json:"meta,omitempty"`
+		Message string `json:"message"`
+		Data    any    `json:"data"`
+		Error   error  `json:"error"`
+		Meta    *Meta  `json:"meta,omitempty"`
 	}
 
 	Meta struct {
@@ -23,18 +23,18 @@ type (
 func NewResponses[T any](ctx echo.Context, statusCode int, message string, data T, err error, meta *Meta) error {
 	if statusCode < 400 {
 		return ctx.JSON(statusCode, &BaseResponse{
-			Messages: message,
-			Data:     data,
-			Error:    nil,
-			Meta:     meta,
+			Message: message,
+			Data:    data,
+			Error:   nil,
+			Meta:    meta,
 		})
 
 	}
 
 	return ctx.JSON(statusCode, &BaseResponse{
-		Messages: message,
-		Data:     data,
-		Error:    err,
-		Meta:     nil,
+		Message: message,
+		Data:    data,
+		Error:   err,
+		Meta:    nil,
 	})
 }

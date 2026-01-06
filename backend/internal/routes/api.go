@@ -34,10 +34,13 @@ func (r *Router) setupMiddleware() {
 func (r *Router) setupRoutes() {
 	r.app.GET("/health", r.container.HealthCheckHandler.HealthCheck)
 
-	// api := r.app.Group("/api/v1")
-	// {
-
-	// }
+	api := r.app.Group("/api/v1")
+	{
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", r.container.AuthHandler.Login)
+		}
+	}
 }
 
 func ServeHTTP(container *bootstrap.Container) *echo.Echo {
