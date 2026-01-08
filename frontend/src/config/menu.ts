@@ -1,4 +1,4 @@
-import { LayoutDashboard, UserCheck, Users, Settings } from "lucide-react";
+import { LayoutDashboard, UserCheck } from "lucide-react";
 
 export const sidebarMenu = [
   {
@@ -7,19 +7,8 @@ export const sidebarMenu = [
     icon: LayoutDashboard,
   },
   {
-    title: "Attendance",
-    href: "/attendance",
+    title: "Attendance History",
+    href: "/attendance-history",
     icon: UserCheck,
-  },
-  {
-    title: "Employees",
-    href: "/employees",
-    icon: Users,
-    // TODO: later will add logic role in here
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: Settings,
   },
 ];

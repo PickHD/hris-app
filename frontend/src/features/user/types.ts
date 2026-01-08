@@ -6,6 +6,8 @@ export interface UserProfile {
   nik: string;
   department_name: string;
   shift_name: string;
+  shift_start_time: string;
+  shift_end_time: string;
   phone_number: string;
   profile_picture_url: string;
 }

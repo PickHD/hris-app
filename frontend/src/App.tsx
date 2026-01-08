@@ -5,11 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
-
-// Placeholder Page (Jika belum ada)
-const AttendancePage = () => (
-  <div className="p-4">Attendance Page Construction</div>
-);
+import DashboardPage from "./pages/dashboard/DashboardPage";
 
 function App() {
   return (
@@ -37,8 +33,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="dashboard" element={<div className="p-4">Dashboard Overview</div>} />
-          <Route path="dashboard/attendance" element={<AttendancePage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="*" element={<div>404 Not Found</div>} />
         </Route>
