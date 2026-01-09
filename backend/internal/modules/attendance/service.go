@@ -47,7 +47,8 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 	}
 	imageReader := bytes.NewReader(imgBytes)
 
-	realAddress := s.location.GetAddressFromCoords(req.Latitude, req.Longitude)
+	// set address temporary
+	tempAddress := fmt.Sprintf("Processing location... (%f, %f)", req.Latitude, req.Longitude)
 
 	todayAtt, err := s.repo.GetTodayAttendance(employee.ID)
 
@@ -83,7 +84,7 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 			CheckInLat:      req.Latitude,
 			CheckInLong:     req.Longitude,
 			CheckInImageURL: imgUrl,
-			CheckInAddress:  realAddress,
+			CheckInAddress:  tempAddress,
 			Status:          status,
 			Notes:           req.Notes,
 			IsSuspicious:    false,
@@ -91,6 +92,14 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 
 		if err := s.repo.Create(newAtt); err != nil {
 			return nil, err
+		}
+
+		// process this attendance (check-in) to geocode worker queue
+		GeocodeQueue <- GeocodeJob{
+			AttendanceID: newAtt.ID,
+			Latitude:     req.Latitude,
+			Longitude:    req.Longitude,
+			IsCheckout:   false,
 		}
 
 		return &AttendanceResponse{
@@ -129,7 +138,7 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 		todayAtt.CheckOutLat = &req.Latitude
 		todayAtt.CheckOutLong = &req.Longitude
 		todayAtt.CheckOutImageURL = &imgUrl
-		todayAtt.CheckOutAddress = &realAddress
+		todayAtt.CheckOutAddress = &tempAddress
 
 		if isSuspicious {
 			todayAtt.IsSuspicious = true
@@ -138,6 +147,14 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 
 		if err := s.repo.Update(todayAtt); err != nil {
 			return nil, err
+		}
+
+		// process this attendance (check-out) to geocode worker queue
+		GeocodeQueue <- GeocodeJob{
+			AttendanceID: todayAtt.ID,
+			Latitude:     req.Latitude,
+			Longitude:    req.Longitude,
+			IsCheckout:   true,
 		}
 
 		return &AttendanceResponse{
