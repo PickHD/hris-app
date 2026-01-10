@@ -44,7 +44,7 @@ func NewContainer() (*Container, error) {
 	healthSvc := health.NewService(healthRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	userSvc := user.NewService(userRepo, bcrypt, storage)
-	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, nominatim)
+	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)

@@ -10,6 +10,7 @@ type Repository interface {
 	GetTodayAttendance(employeeID uint) (*Attendance, error)
 	Create(attendance *Attendance) error
 	Update(attendance *Attendance) error
+	GetHistory(employeeID uint, month, year, page, limit int) ([]Attendance, int64, error)
 }
 
 type repository struct {
@@ -38,4 +39,25 @@ func (r *repository) Create(attendance *Attendance) error {
 
 func (r *repository) Update(attendance *Attendance) error {
 	return r.db.Save(attendance).Error
+}
+
+func (r *repository) GetHistory(employeeID uint, month, year, page, limit int) ([]Attendance, int64, error) {
+	var logs []Attendance
+	var total int64
+
+	query := r.db.Model(&Attendance{}).
+		Where("employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ?", employeeID, month, year)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	err := query.
+		Preload("Shift").
+		Order("date DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&logs).Error
+
+	return logs, total, err
 }

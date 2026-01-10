@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
+	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
 	"time"
 
@@ -16,17 +17,17 @@ import (
 type Service interface {
 	Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error)
 	GetTodayStatus(ctx context.Context, userID uint) (*TodayStatusResponse, error)
+	GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error)
 }
 
 type service struct {
 	repo     Repository
 	userRepo user.Repository
 	storage  StorageProvider
-	location LocationFetcher
 }
 
-func NewService(repo Repository, userRepo user.Repository, storage StorageProvider, location LocationFetcher) Service {
-	return &service{repo, userRepo, storage, location}
+func NewService(repo Repository, userRepo user.Repository, storage StorageProvider) Service {
+	return &service{repo, userRepo, storage}
 }
 
 func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error) {
@@ -47,7 +48,8 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 	}
 	imageReader := bytes.NewReader(imgBytes)
 
-	realAddress := s.location.GetAddressFromCoords(req.Latitude, req.Longitude)
+	// set address temporary
+	tempAddress := fmt.Sprintf("Processing location... (%f, %f)", req.Latitude, req.Longitude)
 
 	todayAtt, err := s.repo.GetTodayAttendance(employee.ID)
 
@@ -83,7 +85,7 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 			CheckInLat:      req.Latitude,
 			CheckInLong:     req.Longitude,
 			CheckInImageURL: imgUrl,
-			CheckInAddress:  realAddress,
+			CheckInAddress:  tempAddress,
 			Status:          status,
 			Notes:           req.Notes,
 			IsSuspicious:    false,
@@ -91,6 +93,14 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 
 		if err := s.repo.Create(newAtt); err != nil {
 			return nil, err
+		}
+
+		// process this attendance (check-in) to geocode worker queue
+		GeocodeQueue <- GeocodeJob{
+			AttendanceID: newAtt.ID,
+			Latitude:     req.Latitude,
+			Longitude:    req.Longitude,
+			IsCheckout:   false,
 		}
 
 		return &AttendanceResponse{
@@ -129,7 +139,7 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 		todayAtt.CheckOutLat = &req.Latitude
 		todayAtt.CheckOutLong = &req.Longitude
 		todayAtt.CheckOutImageURL = &imgUrl
-		todayAtt.CheckOutAddress = &realAddress
+		todayAtt.CheckOutAddress = &tempAddress
 
 		if isSuspicious {
 			todayAtt.IsSuspicious = true
@@ -138,6 +148,14 @@ func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*A
 
 		if err := s.repo.Update(todayAtt); err != nil {
 			return nil, err
+		}
+
+		// process this attendance (check-out) to geocode worker queue
+		GeocodeQueue <- GeocodeJob{
+			AttendanceID: todayAtt.ID,
+			Latitude:     req.Latitude,
+			Longitude:    req.Longitude,
+			IsCheckout:   true,
 		}
 
 		return &AttendanceResponse{
@@ -186,4 +204,20 @@ func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatus
 		CheckOutTime: att.CheckOutTime,
 		WorkDuration: duration,
 	}, nil
+}
+
+func (s *service) GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error) {
+	u, err := s.userRepo.FindByID(userID)
+	if err != nil || u.Employee == nil {
+		return nil, nil, errors.New("employee not found")
+	}
+
+	logs, total, err := s.repo.GetHistory(u.Employee.ID, month, year, page, limit)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	meta := response.NewMeta(page, limit, total)
+
+	return logs, meta, nil
 }

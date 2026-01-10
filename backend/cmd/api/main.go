@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"hris-backend/internal/bootstrap"
+	"hris-backend/internal/modules/attendance"
 	"hris-backend/internal/routes"
 	"hris-backend/internal/seeder"
 	"hris-backend/pkg/logger"
@@ -64,6 +65,8 @@ func main() {
 			os.Exit(1)
 		}
 	case httpServerMode:
+		attendance.StartGeocodeWorker(appContainer.DB.GetDB(), appContainer.Location)
+
 		logger.Info("Starting HRIS API Server...")
 
 		appRouter := routes.ServeHTTP(appContainer)

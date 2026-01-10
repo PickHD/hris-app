@@ -52,6 +52,7 @@ func (r *Router) setupRoutes() {
 		{
 			attendances.POST("/clock", r.container.AttendanceHandler.Clock)
 			attendances.GET("/today", r.container.AttendanceHandler.GetTodayStatus)
+			attendances.GET("/history", r.container.AttendanceHandler.GetHistory)
 		}
 	}
 }
