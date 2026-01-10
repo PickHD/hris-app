@@ -1,10 +1,12 @@
 package attendance
 
 import (
+	"fmt"
 	"hris-backend/pkg/logger"
 	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -52,4 +54,40 @@ func (h *Handler) GetTodayStatus(ctx echo.Context) error {
 	}
 
 	return response.NewResponses[any](ctx, http.StatusOK, "Get Today Status Success", resp, nil, nil)
+}
+
+func (h *Handler) GetHistory(ctx echo.Context) error {
+	userContext, err := utils.GetUserContext(ctx)
+	if err != nil {
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	// Defaults
+	month := int(time.Now().Month())
+	year := time.Now().Year()
+	page := 1
+	limit := 10
+
+	// Parsing Params
+	if m := ctx.QueryParam("month"); m != "" {
+		fmt.Sscanf(m, "%d", &month)
+	}
+	if y := ctx.QueryParam("year"); y != "" {
+		fmt.Sscanf(y, "%d", &year)
+	}
+	if p := ctx.QueryParam("page"); p != "" {
+		fmt.Sscanf(p, "%d", &page)
+	}
+	if l := ctx.QueryParam("limit"); l != "" {
+		fmt.Sscanf(l, "%d", &limit)
+	}
+
+	resp, meta, err := h.service.GetMyHistory(ctx.Request().Context(), userContext.UserID, month, year, page, limit)
+	if err != nil {
+		logger.Errorw("Get My History failed: ", err)
+
+		return response.NewResponses[any](ctx, http.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return response.NewResponses[any](ctx, http.StatusOK, "Get My History Success", resp, nil, meta)
 }

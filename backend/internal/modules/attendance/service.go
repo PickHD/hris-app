@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
+	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
 	"time"
 
@@ -16,17 +17,17 @@ import (
 type Service interface {
 	Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error)
 	GetTodayStatus(ctx context.Context, userID uint) (*TodayStatusResponse, error)
+	GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error)
 }
 
 type service struct {
 	repo     Repository
 	userRepo user.Repository
 	storage  StorageProvider
-	location LocationFetcher
 }
 
-func NewService(repo Repository, userRepo user.Repository, storage StorageProvider, location LocationFetcher) Service {
-	return &service{repo, userRepo, storage, location}
+func NewService(repo Repository, userRepo user.Repository, storage StorageProvider) Service {
+	return &service{repo, userRepo, storage}
 }
 
 func (s *service) Clock(ctx context.Context, userID uint, req *ClockRequest) (*AttendanceResponse, error) {
@@ -203,4 +204,20 @@ func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatus
 		CheckOutTime: att.CheckOutTime,
 		WorkDuration: duration,
 	}, nil
+}
+
+func (s *service) GetMyHistory(ctx context.Context, userID uint, month, year, page, limit int) ([]Attendance, *response.Meta, error) {
+	u, err := s.userRepo.FindByID(userID)
+	if err != nil || u.Employee == nil {
+		return nil, nil, errors.New("employee not found")
+	}
+
+	logs, total, err := s.repo.GetHistory(u.Employee.ID, month, year, page, limit)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	meta := response.NewMeta(page, limit, total)
+
+	return logs, meta, nil
 }
