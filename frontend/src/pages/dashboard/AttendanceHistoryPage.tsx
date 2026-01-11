@@ -151,7 +151,6 @@ export default function AttendanceHistoryPage() {
                     <TableRow key={log.id}>
                       {/* DATE */}
                       <TableCell className="font-medium">
-                        {/* GUNAKAN HELPER AMAN */}
                         {formatDateSafe(log.date, "dd MMM yyyy")}
                         <div className="text-xs text-slate-400 font-normal">
                           {formatDateSafe(log.date, "EEEE")}
@@ -181,7 +180,6 @@ export default function AttendanceHistoryPage() {
                         {log.check_in_time ? (
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-slate-400" />
-                            {/* GUNAKAN HELPER AMAN */}
                             {formatTime(log.check_in_time)}
                           </div>
                         ) : (
@@ -194,7 +192,6 @@ export default function AttendanceHistoryPage() {
                         {log.check_out_time ? (
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-slate-400" />
-                            {/* GUNAKAN HELPER AMAN */}
                             {formatTime(log.check_out_time)}
                           </div>
                         ) : (
