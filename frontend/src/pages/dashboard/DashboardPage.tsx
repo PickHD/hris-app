@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import {
   CalendarClock,
@@ -26,6 +26,7 @@ import { useTodayAttendance } from "@/features/attendance/hooks/useAttendance";
 
 import { useProfile } from "@/features/user/hooks/useProfile";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getGreetingWithName } from "@/lib/greeting";
 
 export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -106,6 +107,10 @@ export default function DashboardPage() {
 
   const { data: user, isLoading: isLoadingUser } = useProfile();
 
+  const greeting = useMemo(() => {
+    return getGreetingWithName(user?.full_name, currentTime);
+  }, [user?.full_name, currentTime]);
+
   const formatShiftTime = (timeString?: string) => {
     if (!timeString) return "--:--";
     return timeString.slice(0, 5);
@@ -119,7 +124,7 @@ export default function DashboardPage() {
             {isLoadingUser ? (
               <Skeleton className="h-10 w-64 bg-slate-200" />
             ) : (
-              `Good Morning, ${user?.full_name?.split(" ")[0]}! 👋`
+              greeting
             )}
           </h2>
           <p className="text-slate-500">
@@ -173,7 +178,6 @@ export default function DashboardPage() {
             <div className="relative group">
               <Button
                 size="lg"
-                // Disable tombol jika sudah completed
                 disabled={
                   isLoadingAttendance || attendanceToday?.type === "COMPLETED"
                 }
