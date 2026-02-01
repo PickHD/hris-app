@@ -80,6 +80,12 @@ func (r *Router) setupRoutes() {
 		adminOnly.GET("/shifts", r.container.MasterHandler.GetShifts)
 
 		adminOnly.GET("/dashboard/stats", r.container.AttendanceHandler.GetDashboardStats)
+
+		adminOnly.GET("/payrolls", r.container.PayrollHandler.GetList)
+		adminOnly.POST("/payrolls/generate", r.container.PayrollHandler.Generate)
+		adminOnly.GET("/payrolls/:id", r.container.PayrollHandler.GetDetail)
+		adminOnly.GET("/payrolls/:id/download", r.container.PayrollHandler.DownloadPayslipPDF)
+		adminOnly.PUT("/payrolls/:id/status", r.container.PayrollHandler.MarkAsPaid)
 	}
 }
 

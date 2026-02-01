@@ -4,6 +4,7 @@ import {
   Users,
   FileSpreadsheet,
   Receipt,
+  Calculator,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 
@@ -40,5 +41,10 @@ export const adminMenu: MenuItem[] = [
     title: "Reimbursements",
     href: "/reimbursement",
     icon: Receipt,
+  },
+  {
+    title: "Payrolls",
+    href: "/admin/payrolls",
+    icon: Calculator,
   },
 ];

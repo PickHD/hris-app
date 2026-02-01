@@ -21,6 +21,9 @@ import {
   FileSpreadsheet,
   Calendar as CalIcon,
   Search,
+  Clock,
+  User,
+  Briefcase,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatsCards } from "@/features/admin/components/StatsCards";
@@ -33,7 +36,7 @@ export default function AttendanceRecapPage() {
   const [search, setSearch] = useState("");
 
   const [startDate, setStartDate] = useState(
-    format(startOfMonth(now), "yyyy-MM-dd")
+    format(startOfMonth(now), "yyyy-MM-dd"),
   );
   const [endDate, setEndDate] = useState(format(endOfMonth(now), "yyyy-MM-dd"));
 
@@ -51,7 +54,7 @@ export default function AttendanceRecapPage() {
     page,
     startDate,
     endDate,
-    debouncedSearch
+    debouncedSearch,
   );
 
   const { data: statsData, isLoading: statsLoading } = useDashboardStats();
@@ -60,10 +63,10 @@ export default function AttendanceRecapPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
             Attendance Recap
           </h2>
-          <p className="text-slate-500">
+          <p className="text-sm md:text-base text-slate-500">
             Monitor and export employee attendance.
           </p>
         </div>
@@ -71,7 +74,7 @@ export default function AttendanceRecapPage() {
         <Button
           onClick={handleExport}
           disabled={isExporting}
-          className="bg-green-600 hover:bg-green-700 text-white"
+          className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto"
         >
           {isExporting ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -86,32 +89,34 @@ export default function AttendanceRecapPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row gap-4 justify-between">
-            {/* Filter */}
-            <div className="flex gap-2 items-center">
-              <div className="relative">
+          <div className="flex flex-col lg:flex-row gap-4 justify-between">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full lg:w-auto">
+              <div className="relative w-full sm:w-auto">
                 <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
                 <Input
                   type="date"
-                  className="pl-9 w-[160px]"
+                  className="pl-9 w-full sm:w-[160px]"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
-              <span className="text-slate-400">-</span>
-              <div className="relative">
+              <span className="text-slate-400 hidden sm:inline">-</span>
+              <span className="text-slate-400 sm:hidden text-center w-full">
+                to
+              </span>
+
+              <div className="relative w-full sm:w-auto">
                 <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
                 <Input
                   type="date"
-                  className="pl-9 w-[160px]"
+                  className="pl-9 w-full sm:w-[160px]"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Search */}
-            <div className="relative w-full md:w-64">
+            <div className="relative w-full lg:w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
               <Input
                 placeholder="Search employee..."
@@ -125,14 +130,76 @@ export default function AttendanceRecapPage() {
             </div>
           </div>
         </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="animate-spin" />
+              <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {data?.data.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center text-sm font-medium text-slate-600">
+                        <CalIcon className="mr-2 h-4 w-4" />
+                        {row.date}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          row.status === "LATE"
+                            ? "text-red-600 bg-red-50 border-red-200"
+                            : row.status === "PRESENT"
+                              ? "text-green-600 bg-green-50 border-green-200"
+                              : ""
+                        }
+                      >
+                        {row.status}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="bg-slate-100 p-2 rounded-full">
+                        <User className="h-4 w-4 text-slate-500" />
+                      </div>
+                      <div>
+                        <div className="font-semibold">{row.employee_name}</div>
+                        <div className="text-xs text-slate-500">{row.nik}</div>
+                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                          <Briefcase className="h-3 w-3" /> {row.department} -{" "}
+                          {row.shift}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                      <div className="bg-slate-50 p-2 rounded text-center">
+                        <div className="text-xs text-slate-500 mb-1 flex items-center justify-center gap-1">
+                          <Clock className="h-3 w-3" /> Check In
+                        </div>
+                        <div className="font-mono text-sm font-medium">
+                          {row.check_in_time || "-"}
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 p-2 rounded text-center">
+                        <div className="text-xs text-slate-500 mb-1 flex items-center justify-center gap-1">
+                          <Clock className="h-3 w-3" /> Check Out
+                        </div>
+                        <div className="font-mono text-sm font-medium">
+                          {row.check_out_time || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -171,8 +238,8 @@ export default function AttendanceRecapPage() {
                               row.status === "LATE"
                                 ? "text-red-600 bg-red-50 border-red-200"
                                 : row.status === "PRESENT"
-                                ? "text-green-600 bg-green-50 border-green-200"
-                                : ""
+                                  ? "text-green-600 bg-green-50 border-green-200"
+                                  : ""
                             }
                           >
                             {row.status}
@@ -191,15 +258,22 @@ export default function AttendanceRecapPage() {
                 </Table>
               </div>
 
-              {/* Pagination */}
+              {data?.data.length === 0 && (
+                <div className="md:hidden text-center py-10 text-slate-500 border rounded-md">
+                  No records found.
+                </div>
+              )}
+
               {data?.meta && (
-                <PaginationControls
-                  currentPage={data.meta.page}
-                  totalPages={data.meta.total_page}
-                  totalData={data.meta.total_data}
-                  onPageChange={setPage}
-                  isLoading={isLoading}
-                />
+                <div className="mt-4">
+                  <PaginationControls
+                    currentPage={data.meta.page}
+                    totalPages={data.meta.total_page}
+                    totalData={data.meta.total_data}
+                    onPageChange={setPage}
+                    isLoading={isLoading}
+                  />
+                </div>
               )}
             </>
           )}
