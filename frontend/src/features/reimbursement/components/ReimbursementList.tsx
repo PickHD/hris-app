@@ -9,15 +9,25 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Receipt, Plus, Filter, Eye } from "lucide-react";
+import {
+  Loader2,
+  Receipt,
+  Plus,
+  Filter,
+  Eye,
+  Calendar,
+  CreditCard,
+} from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import { PaginationControls } from "@/components/shared/PaginationControls";
 import { useReimbursements } from "../hooks/useReimbursement";
 import { format, isValid } from "date-fns";
 import { ReimbursementDetailDialog } from "./ReimbursementDetailDialog";
 import { ReimbursementFormDialog } from "./ReimbursementCreateDialog";
+import { useProfile } from "@/features/user/hooks/useProfile";
 
 export const ReimbursementList = () => {
+  const { data: user } = useProfile();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -53,31 +63,34 @@ export const ReimbursementList = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Reimbursements</h2>
-          <p className="text-slate-500">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Reimbursements
+          </h2>
+          <p className="text-sm sm:text-base text-slate-500">
             Manage financial claims and approvals.
           </p>
         </div>
-
-        <Button
-          onClick={() => setIsCreateOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="mr-2 h-4 w-4" /> New Request
-        </Button>
+        {user?.role !== "SUPERADMIN" && (
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" /> New Request
+          </Button>
+        )}
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Receipt className="h-5 w-5" /> Request List
             </CardTitle>
 
             <div className="flex gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-40">
+              <div className="relative w-full md:w-48">
                 <Filter className="absolute left-2 top-2.5 h-4 w-4 text-slate-500" />
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -104,7 +117,45 @@ export const ReimbursementList = () => {
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {data?.data.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h4 className="font-semibold line-clamp-1">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center text-xs text-slate-500 mt-1">
+                          <Calendar className="mr-1 h-3 w-3" />
+                          {formatDateSafe(item.date_of_expense, "dd MMM yyyy")}
+                        </div>
+                      </div>
+                      <StatusBadge status={item.status} />
+                    </div>
+
+                    <div className="flex items-center text-slate-900 font-bold text-lg">
+                      <CreditCard className="mr-2 h-4 w-4 text-slate-400" />
+                      {formatCurrency(item.amount)}
+                    </div>
+
+                    <div className="pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleViewDetail(item.id)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" /> View Details
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -145,29 +196,29 @@ export const ReimbursementList = () => {
                         </TableCell>
                       </TableRow>
                     ))}
-
-                    {data?.data.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center py-8 text-slate-500"
-                        >
-                          No reimbursement requests found.
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </div>
 
+              {data?.data.length === 0 && (
+                <div className="text-center py-10 text-slate-500 border rounded-md mt-4 md:mt-0">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Receipt className="h-10 w-10 text-slate-300" />
+                    <p>No reimbursement requests found.</p>
+                  </div>
+                </div>
+              )}
+
               {data?.meta && (
-                <PaginationControls
-                  currentPage={data.meta.page}
-                  totalPages={data.meta.total_page}
-                  totalData={data.meta.total_data}
-                  onPageChange={setPage}
-                  isLoading={isLoading}
-                />
+                <div className="mt-4">
+                  <PaginationControls
+                    currentPage={data.meta.page}
+                    totalPages={data.meta.total_page}
+                    totalData={data.meta.total_data}
+                    onPageChange={setPage}
+                    isLoading={isLoading}
+                  />
+                </div>
               )}
             </>
           )}

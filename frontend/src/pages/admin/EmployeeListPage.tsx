@@ -176,7 +176,6 @@ export default function EmployeeListPage() {
                 </Table>
               </div>
 
-              {/* Pagination */}
               {data?.meta && (
                 <PaginationControls
                   currentPage={data.meta.page}
