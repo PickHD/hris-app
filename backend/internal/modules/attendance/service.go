@@ -204,7 +204,7 @@ func (s *service) GetTodayStatus(ctx context.Context, userID uint) (*TodayStatus
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return &TodayStatusResponse{
-			Status: string(constants.AttendanceAStatusAbsent),
+			Status: string(constants.AttendanceStatusAbsent),
 			Type:   string(constants.AttendanceTypeNone),
 		}, nil
 	}

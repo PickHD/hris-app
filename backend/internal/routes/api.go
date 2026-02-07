@@ -62,6 +62,12 @@ func (r *Router) setupRoutes() {
 
 		userOnly.GET("/reimbursements/:id", r.container.ReimbursementHandler.GetDetail)
 		userOnly.PUT("/reimbursements/:id/action", r.container.ReimbursementHandler.ProcessAction)
+
+		userOnly.GET("/leave-requests", r.container.LeaveHandler.GetAll)
+		userOnly.POST("/leave-requests/apply", r.container.LeaveHandler.Apply)
+
+		userOnly.GET("/leave-requests/:id", r.container.LeaveHandler.GetDetail)
+		userOnly.PUT("/leave-requests/:id/action", r.container.LeaveHandler.RequestAction)
 	}
 
 	// only admin can access
