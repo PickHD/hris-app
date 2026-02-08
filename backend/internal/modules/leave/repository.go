@@ -19,6 +19,7 @@ type Repository interface {
 
 	ApproveRequest(requestID uint, approverID uint, attendanceRecords []attendance.Attendance, shouldDeduct bool, days int) error
 	RejectRequest(requestID uint, approverID uint, reason string) error
+	StartTX() *gorm.DB
 }
 
 type repository struct {
@@ -151,4 +152,8 @@ func (r *repository) RejectRequest(requestID uint, approverID uint, reason strin
 			"approved_by":      approverID,
 			"rejection_reason": reason,
 		}).Error
+}
+
+func (r *repository) StartTX() *gorm.DB {
+	return r.db.Begin()
 }

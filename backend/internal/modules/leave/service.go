@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hris-backend/internal/modules/attendance"
 	"hris-backend/internal/modules/master"
+	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
 	"hris-backend/pkg/response"
 	"hris-backend/pkg/utils"
@@ -21,6 +22,7 @@ type Service interface {
 	GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequestListResponse, *response.Meta, error)
 	GetDetail(ctx context.Context, id uint) (*LeaveRequestDetailResponse, error)
 	GenerateInitialBalance(ctx context.Context, txObj interface{}, employeeID uint) (*gorm.DB, error)
+	GenerateAnnualBalance(ctx context.Context) error
 }
 
 type service struct {
@@ -278,7 +280,7 @@ func (s *service) GenerateInitialBalance(ctx context.Context, txObj interface{},
 	for _, lt := range leaveTypes {
 		quota := lt.DefaultQuota
 
-		if lt.Name == "Annual Leave" {
+		if lt.Name == "Annual" {
 			currentMonth := int(time.Now().Month())
 			remainingMonths := 12 - currentMonth + 1
 			quota = (lt.DefaultQuota * remainingMonths) / 12
@@ -302,4 +304,58 @@ func (s *service) GenerateInitialBalance(ctx context.Context, txObj interface{},
 	}
 
 	return tx, nil
+}
+
+func (s *service) GenerateAnnualBalance(ctx context.Context) error {
+	tx := s.repo.StartTX()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	currentYear := time.Now().Year()
+
+	var employees []user.Employee
+	if err := tx.Find(&employees).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var leaveTypes []master.LeaveType
+	if err := tx.Find(&leaveTypes).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	var newBalances []LeaveBalance
+
+	for _, emp := range employees {
+		for _, lt := range leaveTypes {
+			var count int64
+			tx.Model(&LeaveBalance{}).
+				Where("employee_id = ? AND leave_type_id = ? AND year = ?", emp.ID, lt.ID, currentYear).
+				Count(&count)
+
+			if count == 0 {
+				newBalances = append(newBalances, LeaveBalance{
+					EmployeeID:  emp.ID,
+					LeaveTypeID: lt.ID,
+					Year:        currentYear,
+					QuotaTotal:  lt.DefaultQuota,
+					QuotaUsed:   0,
+					QuotaLeft:   lt.DefaultQuota,
+				})
+			}
+		}
+	}
+
+	if len(newBalances) > 0 {
+		if err := tx.CreateInBatches(newBalances, 100).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
 }

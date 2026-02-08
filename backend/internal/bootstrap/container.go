@@ -34,6 +34,8 @@ type Container struct {
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
+
+	LeaveScheduler leave.LeaveScheduler
 }
 
 func NewContainer() (*Container, error) {
@@ -45,6 +47,7 @@ func NewContainer() (*Container, error) {
 	bcrypt := infrastructure.NewBcryptHasher(12)
 	nominatim := infrastructure.NewNominatimFetcher(cfg)
 	geocodeQueue := make(chan attendance.GeocodeJob, 100)
+	cronScheduler := infrastructure.NewCronProvider()
 
 	healthRepo := health.NewRepository(db.GetDB())
 	userRepo := user.NewRepository(db.GetDB())
@@ -75,6 +78,8 @@ func NewContainer() (*Container, error) {
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
 
+	leaveScheduler := leave.NewLeaveScheduler(cronScheduler, leaveSvc)
+
 	return &Container{
 		Config:       cfg,
 		DB:           db,
@@ -95,6 +100,8 @@ func NewContainer() (*Container, error) {
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
+
+		LeaveScheduler: leaveScheduler,
 	}, nil
 }
 
