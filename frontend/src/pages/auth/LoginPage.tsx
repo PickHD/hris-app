@@ -22,7 +22,7 @@ export default function LoginPage() {
               "Sistem manajemen sumber daya manusia yang terintegrasi, aman, dan
               efisien untuk mendukung operasional perusahaan Anda."
             </p>
-            <footer className="text-sm text-slate-400">HRIS v1.0</footer>
+            <footer className="text-sm text-slate-400">HRIS v2.0</footer>
           </blockquote>
         </div>
       </div>
@@ -43,7 +43,7 @@ export default function LoginPage() {
           </div>
 
           <p className="px-8 text-center text-sm text-slate-500 w-full mt-auto">
-            HRIS v1.0 &copy; 2026.
+            HRIS v2.0 &copy; 2026.
           </p>
         </div>
       </div>
