@@ -19,12 +19,13 @@ type Service interface {
 }
 
 type service struct {
-	repo    Repository
-	storage StorageProvider
+	repo         Repository
+	storage      StorageProvider
+	notification NotificationProvider
 }
 
-func NewService(repo Repository, storage StorageProvider) Service {
-	return &service{repo, storage}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider) Service {
+	return &service{repo, storage, notification}
 }
 
 func (s *service) Create(ctx context.Context, req *ReimbursementRequest) error {
@@ -126,10 +127,19 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 		return fmt.Errorf("cannot process reimburstment with status %s", data.Status)
 	}
 
+	var (
+		notificationType    constants.NotificationType
+		notificationTitle   string
+		notificationMessage string
+	)
 	switch constants.ReimbursementAction(req.Action) {
 	case constants.ReimbursementActionApprove:
 		data.Status = constants.ReimbursementStatusApproved
 		data.ApprovedBy = &req.SuperAdminID
+
+		notificationType = constants.NotificationTypeApproved
+		notificationTitle = "Permintaan Disetujui"
+		notificationMessage = "Reimburse Anda telah disetujui oleh Admin."
 	case constants.ReimbursementActionReject:
 		data.Status = constants.ReimbursementStatusRejected
 
@@ -140,9 +150,23 @@ func (s *service) ProcessAction(ctx context.Context, req *ActionRequest) error {
 
 		data.RejectionReason.String = req.RejectionReason
 		data.RejectionReason.Valid = true
+
+		notificationType = constants.NotificationTypeRejected
+		notificationTitle = "Permintaan Ditolak"
+		notificationMessage = "Reimburse Anda telah ditolak oleh Admin."
 	default:
 		return fmt.Errorf("invalid action: %s", req.Action)
 	}
 
-	return s.repo.Update(data)
+	err = s.repo.Update(data)
+	if err != nil {
+		return err
+	}
+
+	return s.notification.SendNotification(
+		data.User.ID,
+		string(notificationType),
+		notificationTitle,
+		notificationMessage,
+	)
 }

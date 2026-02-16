@@ -26,12 +26,13 @@ type Service interface {
 }
 
 type service struct {
-	repo    Repository
-	storage StorageProvider
+	repo         Repository
+	storage      StorageProvider
+	notification NotificationProvider
 }
 
-func NewService(repo Repository, storage StorageProvider) Service {
-	return &service{repo, storage}
+func NewService(repo Repository, storage StorageProvider, notification NotificationProvider) Service {
+	return &service{repo, storage, notification}
 }
 
 func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
@@ -107,6 +108,11 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 		return errors.New("request is not pending")
 	}
 
+	var (
+		notificationType    constants.NotificationType
+		notificationTitle   string
+		notificationMessage string
+	)
 	switch constants.LeaveAction(req.Action) {
 	case constants.LeaveActionApprove:
 		shouldDeduct := leaveRequest.LeaveType.IsDeducted
@@ -158,6 +164,10 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 		if err != nil {
 			return err
 		}
+
+		notificationType = constants.NotificationTypeApproved
+		notificationTitle = "Permintaan Disetujui"
+		notificationMessage = "Cuti Anda telah disetujui oleh Admin."
 	case constants.LeaveActionReject:
 		if req.RejectionReason == "" {
 			return errors.New("rejection reason required")
@@ -167,11 +177,20 @@ func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) er
 		if err != nil {
 			return err
 		}
+
+		notificationType = constants.NotificationTypeRejected
+		notificationTitle = "Permintaan Ditolak"
+		notificationMessage = "Cuti Anda telah ditolak oleh Admin."
 	default:
 		return errors.New("invalid action")
 	}
 
-	return nil
+	return s.notification.SendNotification(
+		leaveRequest.User.ID,
+		string(notificationType),
+		notificationTitle,
+		notificationMessage,
+	)
 }
 
 func (s *service) GetList(ctx context.Context, filter *LeaveFilter) ([]LeaveRequestListResponse, *response.Meta, error) {

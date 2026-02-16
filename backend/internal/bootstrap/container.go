@@ -9,18 +9,20 @@ import (
 	"hris-backend/internal/modules/health"
 	"hris-backend/internal/modules/leave"
 	"hris-backend/internal/modules/master"
+	"hris-backend/internal/modules/notification"
 	"hris-backend/internal/modules/payroll"
 	"hris-backend/internal/modules/reimbursement"
 	"hris-backend/internal/modules/user"
 )
 
 type Container struct {
-	Config   *config.Config
-	DB       *infrastructure.GormConnectionProvider
-	Storage  *infrastructure.MinioStorageProvider
-	JWT      *infrastructure.JwtProvider
-	Bcrypt   *infrastructure.BcryptHasher
-	Location *infrastructure.NominatimFetcher
+	Config       *config.Config
+	DB           *infrastructure.GormConnectionProvider
+	Storage      *infrastructure.MinioStorageProvider
+	JWT          *infrastructure.JwtProvider
+	Bcrypt       *infrastructure.BcryptHasher
+	Location     *infrastructure.NominatimFetcher
+	WebsocketHub *infrastructure.Hub
 
 	HealthCheckHandler   *health.Handler
 	AuthHandler          *auth.Handler
@@ -30,6 +32,7 @@ type Container struct {
 	ReimbursementHandler *reimbursement.Handler
 	PayrollHandler       *payroll.Handler
 	LeaveHandler         *leave.Handler
+	NotificationHandler  *notification.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -47,6 +50,7 @@ func NewContainer() (*Container, error) {
 	bcrypt := infrastructure.NewBcryptHasher(12)
 	nominatim := infrastructure.NewNominatimFetcher(cfg)
 	cronScheduler := infrastructure.NewCronProvider()
+	wsHub := infrastructure.NewHub()
 	geocodeWorker := attendance.NewGeocodeWorker(db.GetDB(), nominatim, 100)
 
 	healthRepo := health.NewRepository(db.GetDB())
@@ -58,12 +62,13 @@ func NewContainer() (*Container, error) {
 	leaveRepo := leave.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
+	notificationSvc := notification.NewService(wsHub)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker)
 	masterSvc := master.NewService(masterRepo)
-	reimburseSvc := reimbursement.NewService(reimburseRepo, storage)
+	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc)
 	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
-	leaveSvc := leave.NewService(leaveRepo, storage)
+	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc)
 
 	healthHandler := health.NewHandler(healthSvc)
@@ -74,6 +79,7 @@ func NewContainer() (*Container, error) {
 	reimburseHandler := reimbursement.NewHandler(reimburseSvc)
 	payrollHandler := payroll.NewHandler(payrollSvc)
 	leaveHandler := leave.NewHandler(leaveSvc)
+	notificationHandler := notification.NewHandler(wsHub)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -87,6 +93,7 @@ func NewContainer() (*Container, error) {
 		JWT:          jwt,
 		Bcrypt:       bcrypt,
 		Location:     nominatim,
+		WebsocketHub: wsHub,
 
 		HealthCheckHandler:   healthHandler,
 		AuthHandler:          authHandler,
@@ -96,6 +103,7 @@ func NewContainer() (*Container, error) {
 		ReimbursementHandler: reimburseHandler,
 		PayrollHandler:       payrollHandler,
 		LeaveHandler:         leaveHandler,
+		NotificationHandler:  notificationHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,
