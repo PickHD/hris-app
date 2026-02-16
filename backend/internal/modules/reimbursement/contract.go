@@ -8,3 +8,10 @@ import (
 type StorageProvider interface {
 	UploadFileMultipart(ctx context.Context, file *multipart.FileHeader, objectName string) (string, error)
 }
+
+type NotificationProvider interface {
+	SendNotification(userID uint,
+		Type string,
+		Title string,
+		Message string) error
+}

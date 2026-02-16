@@ -17,6 +17,7 @@ import { useLogout } from "@/features/auth/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/features/user/hooks/useProfile";
 import { Loader2 } from "lucide-react";
+import { NotificationBell } from "@/features/notification";
 
 export default function DashboardLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -55,6 +56,7 @@ export default function DashboardLayout() {
               </div>
             ) : (
               <DropdownMenu>
+                <NotificationBell />
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"

@@ -43,6 +43,7 @@ func (r *Router) setupRoutes() {
 
 	// protected global
 	protected := api.Group("", r.container.AuthMiddleware.VerifyToken)
+	protected.GET("/ws", r.container.NotificationHandler.HandleWebSocket)
 
 	// admin or employee can access
 	userOnly := protected.Group("",

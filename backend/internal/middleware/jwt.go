@@ -23,21 +23,27 @@ func NewAuthMiddleware(jwtProvider *infrastructure.JwtProvider) *AuthMiddleware 
 
 func (m *AuthMiddleware) VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
+		var tokenString string
+
 		authHeader := ctx.Request().Header.Get("Authorization")
-		if authHeader == "" {
-			return response.NewResponses[any](ctx, http.StatusUnauthorized, "missing authorization header", nil, nil, nil)
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				tokenString = parts[1]
+			}
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			return response.NewResponses[any](ctx, http.StatusUnauthorized, "invalid authorization format", nil, nil, nil)
+		if tokenString == "" {
+			tokenString = ctx.QueryParam("token")
 		}
 
-		tokenString := parts[1]
+		if tokenString == "" {
+			return response.NewResponses[any](ctx, http.StatusUnauthorized, "missing or invalid authentication token", nil, nil, nil)
+		}
 
 		claims, err := m.jwtProvider.ValidateToken(tokenString)
 		if err != nil {
-			return response.NewResponses[any](ctx, http.StatusUnauthorized, "invalid or expired token", nil, nil, nil)
+			return response.NewResponses[any](ctx, http.StatusUnauthorized, "invalid or expired token", nil, err, nil)
 		}
 
 		ctx.Set("user", claims)
