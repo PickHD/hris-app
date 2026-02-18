@@ -6,6 +6,7 @@ import (
 	"hris-backend/internal/middleware"
 	"hris-backend/internal/modules/attendance"
 	"hris-backend/internal/modules/auth"
+	"hris-backend/internal/modules/company"
 	"hris-backend/internal/modules/health"
 	"hris-backend/internal/modules/leave"
 	"hris-backend/internal/modules/master"
@@ -33,6 +34,7 @@ type Container struct {
 	PayrollHandler       *payroll.Handler
 	LeaveHandler         *leave.Handler
 	NotificationHandler  *notification.Handler
+	CompanyHandler       *company.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -62,16 +64,18 @@ func NewContainer() (*Container, error) {
 	payrollRepo := payroll.NewRepository(db.GetDB())
 	leaveRepo := leave.NewRepository(db.GetDB())
 	notificationRepo := notification.NewRepository(db.GetDB())
+	companyRepo := company.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker)
 	masterSvc := master.NewService(masterRepo)
-	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo)
+	companySvc := company.NewService(companyRepo, storage)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -82,6 +86,7 @@ func NewContainer() (*Container, error) {
 	payrollHandler := payroll.NewHandler(payrollSvc)
 	leaveHandler := leave.NewHandler(leaveSvc)
 	notificationHandler := notification.NewHandler(wsHub, notificationSvc)
+	companyHandler := company.NewHandler(companySvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -107,6 +112,7 @@ func NewContainer() (*Container, error) {
 		PayrollHandler:       payrollHandler,
 		LeaveHandler:         leaveHandler,
 		NotificationHandler:  notificationHandler,
+		CompanyHandler:       companyHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

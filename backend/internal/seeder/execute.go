@@ -2,6 +2,7 @@ package seeder
 
 import (
 	"hris-backend/internal/config"
+	"hris-backend/internal/modules/company"
 	"hris-backend/internal/modules/master"
 	"hris-backend/internal/modules/user"
 	"hris-backend/pkg/constants"
@@ -42,47 +43,6 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 			return err
 		}
 
-		employeesToSeed := []struct {
-			NIK      string
-			Name     string
-			DeptID   uint
-			ShiftID  uint
-			Role     string
-			IsActive bool
-		}{
-			{"EMP001", "Taufik Januar", generalDept.ID, regularShift.ID, string(constants.UserRoleEmployee), true},
-			//TODO: insert real employees later
-		}
-
-		for _, empData := range employeesToSeed {
-			hashPass, _ := hasher.HashPassword(empData.NIK)
-			newUser := user.User{
-				Username:           empData.NIK,
-				PasswordHash:       hashPass,
-				Role:               empData.Role,
-				MustChangePassword: true,
-				IsActive:           empData.IsActive,
-			}
-
-			if err := tx.Create(&newUser).Error; err != nil {
-				logger.Errorf("User %s already exists or error: %v", empData.NIK, err)
-				continue
-			}
-			newEmployee := user.Employee{
-				UserID:       newUser.ID,
-				DepartmentID: empData.DeptID,
-				ShiftID:      empData.ShiftID,
-				NIK:          empData.NIK,
-				FullName:     empData.Name,
-			}
-
-			if err := tx.Create(&newEmployee).Error; err != nil {
-				return err
-			}
-
-			logger.Infof("Seeded: %s - %s", empData.NIK, empData.Name)
-		}
-
 		leaveTypeAnnual := master.LeaveType{Name: "Annual", DefaultQuota: 12, IsDeducted: true}
 		leaveTypeSick := master.LeaveType{Name: "Sick", DefaultQuota: 15, IsDeducted: false}
 		leaveTypeUnpaid := master.LeaveType{Name: "Unpaid", DefaultQuota: 0, IsDeducted: false}
@@ -96,6 +56,12 @@ func Execute(db *gorm.DB, cfg *config.Config, hasher Hasher) error {
 		}
 
 		if err := tx.Where(master.LeaveType{Name: leaveTypeUnpaid.Name}).FirstOrCreate(&leaveTypeUnpaid).Error; err != nil {
+			return err
+		}
+
+		companyData := company.Company{Name: "PT. Pick", PhoneNumber: "08531432221023", Address: "Jl.Kejaksaan no.23 Jakarta Utara", Email: "admin@pick.com"}
+
+		if err := tx.Where(company.Company{Name: companyData.Name}).FirstOrCreate(&companyData).Error; err != nil {
 			return err
 		}
 

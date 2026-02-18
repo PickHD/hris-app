@@ -19,6 +19,7 @@ import EmployeeListPage from "@/pages/admin/EmployeeListPage";
 import AttendanceRecapPage from "@/pages/admin/AttendanceRecapPage";
 import PayrollListPage from "./pages/payroll/PayrollListPage";
 import LeaveListPage from "./pages/leave/LeaveListPage";
+import CompanySettingsPage from "./pages/admin/CompanySettingsPage";
 
 function App() {
   return (
@@ -63,7 +64,11 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["SUPERADMIN"]} />}>
             <Route path="admin/employees" element={<EmployeeListPage />} />
             <Route path="admin/recap" element={<AttendanceRecapPage />} />
-            <Route path="admin/payrolls" element={<PayrollListPage />}></Route>
+            <Route path="admin/payrolls" element={<PayrollListPage />} />
+            <Route
+              path="admin/company-settings"
+              element={<CompanySettingsPage />}
+            />
 
             {/* 404 Inside Layout */}
             <Route
