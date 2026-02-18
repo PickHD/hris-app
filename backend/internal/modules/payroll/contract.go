@@ -1,6 +1,9 @@
 package payroll
 
-import "hris-backend/internal/modules/user"
+import (
+	"hris-backend/internal/modules/company"
+	"hris-backend/internal/modules/user"
+)
 
 type UserProvider interface {
 	FindAllEmployeeActive() ([]user.Employee, error)
@@ -12,4 +15,8 @@ type AttendanceProvider interface {
 
 type ReimbursementProvider interface {
 	GetBulkApprovedAmount(month, year int) (map[uint]float64, error)
+}
+
+type CompanyProvider interface {
+	FindByID(id uint) (*company.Company, error)
 }

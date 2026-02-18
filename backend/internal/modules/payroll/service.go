@@ -26,13 +26,15 @@ type service struct {
 	user          UserProvider
 	reimbursement ReimbursementProvider
 	attendance    AttendanceProvider
+	company       CompanyProvider
 }
 
 func NewService(repo Repository,
 	user UserProvider,
 	reimbursement ReimbursementProvider,
-	attendance AttendanceProvider) Service {
-	return &service{repo, user, reimbursement, attendance}
+	attendance AttendanceProvider,
+	company CompanyProvider) Service {
+	return &service{repo, user, reimbursement, attendance, company}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
@@ -220,16 +222,21 @@ func (s *service) GeneratePayslipPDF(ctx context.Context, id uint) (*fpdf.Fpdf, 
 		return nil, nil, err
 	}
 
+	company, err := s.company.FindByID(1)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 	pdf.SetFont("Arial", "", 12)
 
 	pdf.SetFont("Arial", "B", 16)
-	pdf.CellFormat(0, 10, "PT. YOUR COMPANY", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 10, company.Name, "", 1, "C", false, 0, "")
 
 	pdf.SetFont("Arial", "", 10)
-	pdf.CellFormat(0, 5, "Jalan Sudirman No. 123, Jakarta Selatan", "", 1, "C", false, 0, "")
-	pdf.CellFormat(0, 5, "Telp: (021) 555-1234 | Email: hr@company.com", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 5, company.Address, "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 5, fmt.Sprintf("Telp: %s | Email: %s", company.PhoneNumber, company.Email), "", 1, "C", false, 0, "")
 
 	pdf.SetLineWidth(0.5)
 	pdf.Line(10, 30, 200, 30)
