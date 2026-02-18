@@ -6,6 +6,7 @@ import {
   Receipt,
   Calculator,
   CalendarDays,
+  Settings,
 } from "lucide-react";
 import type { MenuItem } from "./types";
 
@@ -57,5 +58,10 @@ export const adminMenu: MenuItem[] = [
     title: "Leave Requests",
     href: "/leave",
     icon: CalendarDays,
+  },
+  {
+    title: "Company Settings",
+    href: "/admin/company-settings",
+    icon: Settings,
   },
 ];
