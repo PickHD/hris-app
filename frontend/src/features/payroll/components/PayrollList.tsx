@@ -165,7 +165,7 @@ export default function PayrollList() {
         </CardHeader>
 
         <CardContent>
-          <div className="rounded-md border">
+          <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -276,6 +276,98 @@ export default function PayrollList() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile View */}
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {isLoading ? (
+               <div className="flex justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              </div>
+            ) : data?.data.length === 0 ? (
+                <div className="text-center py-10 text-slate-500 border rounded-md">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <FileText className="h-10 w-10 text-slate-300" />
+                  <p>No payroll data found.</p>
+                </div>
+              </div>
+            ) : (
+                data?.data.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-semibold text-slate-900">
+                        {item.employee_name}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {item.employee_nik}
+                      </div>
+                       <div className="text-xs text-slate-500 mt-1">
+                          {format(new Date(item.period_date), "MMMM yyyy")}
+                       </div>
+                    </div>
+                    <Badge
+                      variant={
+                        item.status === "PAID" ? "default" : "secondary"
+                      }
+                      className={
+                        item.status === "PAID"
+                          ? "bg-green-100 text-green-700 hover:bg-green-100"
+                          : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100"
+                      }
+                    >
+                      {item.status}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t pt-2">
+                    <div className="flex flex-col">
+                        <span className="text-xs text-slate-500">Net Salary</span>
+                         <span className="font-bold text-slate-700 text-lg">
+                        {formatCurrency(item.net_salary)}
+                        </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setSelectedPayrollId(item.id);
+                          setIsDetailOpen(true);
+                        }}
+                      >
+                        <Eye className="mr-2 h-4 w-4" /> View Details
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                         onClick={() =>
+                            handleDownload(
+                              item.id,
+                              item.employee_nik,
+                              item.period_date,
+                            )
+                          }
+                          disabled={isDownloading === item.id}
+                      >
+                         {isDownloading === item.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="mr-2 h-4 w-4" />
+                          )}
+                        Payslip
+                      </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {data?.meta && (

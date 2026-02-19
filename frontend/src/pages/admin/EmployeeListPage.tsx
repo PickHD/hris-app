@@ -124,7 +124,7 @@ export default function EmployeeListPage() {
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -174,6 +174,62 @@ export default function EmployeeListPage() {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {data?.data.length === 0 ? (
+                  <div className="text-center py-10 text-slate-500 border rounded-md">
+                    <p>No employees found.</p>
+                  </div>
+                ) : (
+                  data?.data.map((emp) => (
+                    <div
+                      key={emp.id}
+                      className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-bold text-slate-900">
+                            {emp.full_name}
+                          </div>
+                          <div className="text-xs text-slate-500 font-mono">
+                            {emp.username}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                             <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEdit(emp)}
+                            >
+                              <Pencil className="h-4 w-4 text-slate-500" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleDeleteClick(emp.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-sm border-t pt-2">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-500">Department</span>
+                            <span className="font-medium">{emp.department_name}</span>
+                          </div>
+                          <div className="flex flex-col">
+                             <span className="text-xs text-slate-500">Shift</span>
+                            <span className="font-medium">{emp.shift_name}</span>
+                          </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               {data?.meta && (
