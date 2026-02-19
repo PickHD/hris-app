@@ -87,12 +87,13 @@ export default function AttendanceRecapPage() {
           <div className="flex flex-col lg:flex-row gap-4 justify-between">
             <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full lg:w-auto">
               <div className="relative w-full sm:w-auto">
-                <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />
                 <Input
                   type="date"
                   className="pl-9 w-full sm:w-[160px]"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  onClick={(e) => e.currentTarget.showPicker()}
                 />
               </div>
               <span className="text-slate-400 hidden sm:inline">-</span>
@@ -101,12 +102,13 @@ export default function AttendanceRecapPage() {
               </span>
 
               <div className="relative w-full sm:w-auto">
-                <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                <CalIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />
                 <Input
                   type="date"
                   className="pl-9 w-full sm:w-[160px]"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  onClick={(e) => e.currentTarget.showPicker()}
                 />
               </div>
             </div>
@@ -186,7 +188,7 @@ export default function AttendanceRecapPage() {
                     ))}
 
                     {allRecaps.length === 0 && (
-                      <TableRow>
+                      <TableRow className="hidden md:table-row">
                         <TableCell colSpan={6} className="text-center py-8">
                           No records found.
                         </TableCell>
@@ -196,9 +198,78 @@ export default function AttendanceRecapPage() {
                 </Table>
               </div>
 
+              {/* Mobile View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {allRecaps.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <div className="font-semibold line-clamp-1">
+                          {row.employee_name}
+                        </div>
+                        <div className="flex items-center text-xs text-slate-500 mt-1">
+                          <CalIcon className="mr-1 h-3 w-3" />
+                          {row.date}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {row.nik}
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          row.status === "LATE"
+                            ? "text-red-600 bg-red-50 border-red-200"
+                            : row.status === "PRESENT"
+                              ? "text-green-600 bg-green-50 border-green-200"
+                              : row.status === "LEAVE"
+                                ? "text-blue-600 bg-blue-50 border-blue-200"
+                                : row.status === "SICK"
+                                  ? "text-amber-600 bg-amber-50 border-amber-200"
+                                  : "text-slate-500 bg-slate-100"
+                        }
+                      >
+                        {row.status}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm border-t pt-2">
+                       <div className="flex flex-col">
+                        <span className="text-slate-500 text-xs">
+                          Dept / Shift
+                        </span>
+                        <span>
+                          {row.department} ({row.shift})
+                        </span>
+                      </div>
+                      <div className="flex flex-col text-right">
+                         {/* Spacer or extra info if needed */}
+                      </div>
+
+                      <div className="flex flex-col">
+                        <span className="text-slate-500 text-xs">Check In</span>
+                        <span>{row.check_in_time || "-"}</span>
+                      </div>
+                      <div className="flex flex-col text-right">
+                        <span className="text-slate-500 text-xs">
+                          Check Out
+                        </span>
+                        <span>{row.check_out_time || "-"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {allRecaps.length === 0 && (
-                <div className="md:hidden text-center py-10 text-slate-500 border rounded-md">
-                  No records found.
+                <div className="text-center py-10 text-slate-500 border rounded-md mt-4 md:mt-0">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <CalIcon className="h-10 w-10 text-slate-300" />
+                    <p>No attendance records found.</p>
+                  </div>
                 </div>
               )}
 

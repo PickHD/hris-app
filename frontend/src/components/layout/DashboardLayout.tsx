@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Menu, LogOut, User } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +44,7 @@ export default function DashboardLayout() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-64">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <Sidebar />
               </SheetContent>
             </Sheet>

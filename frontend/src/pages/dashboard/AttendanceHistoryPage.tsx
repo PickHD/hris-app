@@ -134,7 +134,7 @@ export default function AttendanceHistoryPage() {
             </div>
           ) : allLogs.length > 0 ? (
             <>
-              <div className="rounded-md border">
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -250,6 +250,87 @@ export default function AttendanceHistoryPage() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {allLogs.map((log: AttendanceLog) => (
+                  <div
+                    key={log.id}
+                    className="flex flex-col rounded-lg border bg-card p-4 shadow-sm space-y-3"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {formatDateSafe(log.date, "EEEE, dd MMM yyyy")}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                           <Badge
+                            variant="outline"
+                            className={getStatusColor(log.status)}
+                          >
+                            {log.status}
+                          </Badge>
+                          {log.is_suspicious && (
+                            <Badge
+                              variant="destructive"
+                              className="text-[10px] px-1 h-5"
+                            >
+                              FLAGGED
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm border-t pt-2">
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-500 mb-1">Check In</span>
+                        {log.check_in_time ? (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="font-medium">{formatTime(log.check_in_time)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                          <div className="flex items-start gap-1 mt-1 text-xs text-slate-500">
+                              <MapPin className="w-3 h-3 mt-0.5 text-green-600 shrink-0" />
+                              <span className="line-clamp-1">
+                                {log.check_in_address || "-"}
+                              </span>
+                          </div>
+                      </div>
+
+                      <div className="flex flex-col">
+                         <span className="text-xs text-slate-500 mb-1">Check Out</span>
+                          {log.check_out_time ? (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="font-medium">{formatTime(log.check_out_time)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic">On Duty</span>
+                          )}
+                           {log.check_out_address && (
+                              <div className="flex items-start gap-1 mt-1 text-xs text-slate-500">
+                                <MapPin className="w-3 h-3 mt-0.5 text-orange-400 shrink-0" />
+                                <span className="line-clamp-1">
+                                  {log.check_out_address}
+                                </span>
+                              </div>
+                            )}
+                      </div>
+                    </div>
+
+                    {log.notes && (
+                      <div className="bg-slate-50 p-2 rounded text-xs text-slate-600 flex gap-2 items-start">
+                        <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0 text-blue-500" />
+                        <span>{log.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
               <PaginationControls
