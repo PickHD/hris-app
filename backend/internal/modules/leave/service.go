@@ -1,10 +1,6 @@
 package leave
 
 import (
-	"bytes"
-	"context"
-	"errors"
-	"fmt"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/internal/modules/attendance"
 	"basekarya-backend/internal/modules/master"
@@ -12,6 +8,10 @@ import (
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -37,87 +37,88 @@ func NewService(repo Repository, storage StorageProvider, notification Notificat
 }
 
 func (s *service) Apply(ctx context.Context, req *ApplyRequest) error {
-	// parse date
-	start, err := time.Parse(constants.DefaultTimeFormat, req.StartDate)
-	if err != nil {
-		return errors.New("invalid start date format")
-	}
-	end, err := time.Parse(constants.DefaultTimeFormat, req.EndDate)
-	if err != nil {
-		return errors.New("invalid end date format")
-	}
-
-	if end.Before(start) {
-		return errors.New("end date must be after start date")
-	}
-
-	// calculate total days
-	totalDays := int(end.Sub(start).Hours()/24) + 1
-
-	// check balance still available or not
-	balance, err := s.repo.GetBalance(ctx, req.EmployeeID, req.LeaveTypeID, start.Year())
-	if err != nil {
-		return err
-	}
-
-	if balance.QuotaLeft < totalDays {
-		return errors.New("insufficient leave balance")
-	}
-
-	attachmentUrl := ""
-	if req.AttachmentBase64 != "" {
-		// construct attachment_base64 if not empty
-		imgBytes, err := utils.DecodeBase64Image(req.AttachmentBase64)
+	return s.transactionManager.RunInTransaction(ctx, func(ctx context.Context) error {
+		// parse date
+		start, err := time.Parse(constants.DefaultTimeFormat, req.StartDate)
 		if err != nil {
-			return errors.New("invalid image")
+			return errors.New("invalid start date format")
+		}
+		end, err := time.Parse(constants.DefaultTimeFormat, req.EndDate)
+		if err != nil {
+			return errors.New("invalid end date format")
 		}
 
-		imageReader := bytes.NewReader(imgBytes)
-		now := time.Now()
-		todayString := now.Format(constants.DefaultTimeFormat)
-		fileName := fmt.Sprintf("leaves/%d/%s-%d.jpg", req.EmployeeID, todayString, now.Unix())
+		if end.Before(start) {
+			return errors.New("end date must be after start date")
+		}
 
-		attachmentUrl, err = s.storage.UploadFileByte(ctx, fmt.Sprintf("in-%s", fileName), imageReader, int64(len(imgBytes)), "image/jpg")
+		// calculate total days
+		totalDays := int(end.Sub(start).Hours()/24) + 1
+
+		// check balance still available or not
+		balance, err := s.repo.GetBalance(ctx, req.EmployeeID, req.LeaveTypeID, start.Year())
 		if err != nil {
 			return err
 		}
-	}
 
-	// construct leave request and save it to db
-	leaveReq := &LeaveRequest{
-		UserID:        req.UserID,
-		EmployeeID:    req.EmployeeID,
-		LeaveTypeID:   req.LeaveTypeID,
-		StartDate:     start,
-		EndDate:       end,
-		TotalDays:     totalDays,
-		Reason:        req.Reason,
-		AttachmentURL: attachmentUrl,
-		Status:        constants.LeaveStatusPending,
-	}
+		if balance.QuotaLeft < totalDays {
+			return errors.New("insufficient leave balance")
+		}
 
-	err = s.repo.CreateRequest(ctx, leaveReq)
-	if err != nil {
-		return err
-	}
+		attachmentUrl := ""
+		if req.AttachmentBase64 != "" {
+			// construct attachment_base64 if not empty
+			imgBytes, err := utils.DecodeBase64Image(req.AttachmentBase64)
+			if err != nil {
+				return errors.New("invalid image")
+			}
 
-	adminID, err := s.user.FindAdminID(ctx)
-	if err != nil {
-		return err
-	}
+			imageReader := bytes.NewReader(imgBytes)
+			now := time.Now()
+			todayString := now.Format(constants.DefaultTimeFormat)
+			fileName := fmt.Sprintf("leaves/%d/%s-%d.jpg", req.EmployeeID, todayString, now.Unix())
 
-	// send notification to admin
-	go func() {
-		_ = s.notification.SendNotification(
-			adminID,
-			string(constants.NotificationTypeLeaveApprovalReq),
-			"Pengajuan Cuti Baru",
-			fmt.Sprintf("Karyawan mengajukan cuti pada tanggal %s s.d %s", req.StartDate, req.EndDate),
-			leaveReq.ID,
-		)
-	}()
+			attachmentUrl, err = s.storage.UploadFileByte(ctx, fmt.Sprintf("in-%s", fileName), imageReader, int64(len(imgBytes)), "image/jpg")
+			if err != nil {
+				return err
+			}
+		}
 
-	return nil
+		// construct leave request and save it to db
+		leaveReq := &LeaveRequest{
+			UserID:        req.UserID,
+			EmployeeID:    req.EmployeeID,
+			LeaveTypeID:   req.LeaveTypeID,
+			StartDate:     start,
+			EndDate:       end,
+			TotalDays:     totalDays,
+			Reason:        req.Reason,
+			AttachmentURL: attachmentUrl,
+			Status:        constants.LeaveStatusPending,
+		}
+
+		err = s.repo.CreateRequest(ctx, leaveReq)
+		if err != nil {
+			return err
+		}
+
+		adminID, err := s.user.FindAdminID(ctx)
+		if err != nil {
+			return err
+		}
+
+		// send notification to admin
+		go func() {
+			_ = s.notification.SendNotification(
+				adminID,
+				string(constants.NotificationTypeLeaveApprovalReq),
+				"Pengajuan Cuti Baru",
+				fmt.Sprintf("Karyawan mengajukan cuti pada tanggal %s s.d %s", req.StartDate, req.EndDate),
+				leaveReq.ID,
+			)
+		}()
+		return nil
+	})
 }
 
 func (s *service) RequestAction(ctx context.Context, req *LeaveActionRequest) error {

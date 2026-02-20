@@ -9,6 +9,7 @@ import (
 	"basekarya-backend/internal/modules/company"
 	"basekarya-backend/internal/modules/health"
 	"basekarya-backend/internal/modules/leave"
+	"basekarya-backend/internal/modules/loan"
 	"basekarya-backend/internal/modules/master"
 	"basekarya-backend/internal/modules/notification"
 	"basekarya-backend/internal/modules/payroll"
@@ -37,6 +38,7 @@ type Container struct {
 	LeaveHandler         *leave.Handler
 	NotificationHandler  *notification.Handler
 	CompanyHandler       *company.Handler
+	LoanHandler          *loan.Handler
 
 	AuthMiddleware        *middleware.AuthMiddleware
 	RateLimiterMiddleware *middleware.RateLimiterMiddleware
@@ -72,6 +74,7 @@ func NewContainer() (*Container, error) {
 	leaveRepo := leave.NewRepository(db.GetDB())
 	notificationRepo := notification.NewRepository(db.GetDB())
 	companyRepo := company.NewRepository(db.GetDB())
+	loanRepo := loan.NewRepository(db.GetDB())
 
 	healthSvc := health.NewService(healthRepo)
 	notificationSvc := notification.NewService(wsHub, notificationRepo)
@@ -83,6 +86,7 @@ func NewContainer() (*Container, error) {
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc, transactionManager)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager)
 	companySvc := company.NewService(companyRepo, storage)
+	loanSvc := loan.NewService(loanRepo, notificationSvc, userRepo, transactionManager)
 
 	healthHandler := health.NewHandler(healthSvc)
 	authHandler := auth.NewHandler(authSvc)
@@ -94,6 +98,7 @@ func NewContainer() (*Container, error) {
 	leaveHandler := leave.NewHandler(leaveSvc)
 	notificationHandler := notification.NewHandler(wsHub, notificationSvc)
 	companyHandler := company.NewHandler(companySvc)
+	loanHandler := loan.NewHandler(loanSvc)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwt)
 	rateLimiterMiddleware := middleware.NewRateLimiterMiddleware()
@@ -122,6 +127,7 @@ func NewContainer() (*Container, error) {
 		LeaveHandler:         leaveHandler,
 		NotificationHandler:  notificationHandler,
 		CompanyHandler:       companyHandler,
+		LoanHandler:          loanHandler,
 
 		AuthMiddleware:        authMiddleware,
 		RateLimiterMiddleware: rateLimiterMiddleware,

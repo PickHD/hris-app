@@ -74,6 +74,12 @@ func (r *Router) setupRoutes() {
 
 		userOnly.GET("/notifications", r.container.NotificationHandler.GetAll)
 		userOnly.PUT("/notifications/:id/read", r.container.NotificationHandler.MarkAsRead)
+
+		userOnly.GET("/loans", r.container.LoanHandler.GetAll)
+		userOnly.POST("/loans", r.container.LoanHandler.Create)
+
+		userOnly.GET("/loans/:id", r.container.LoanHandler.GetDetail)
+		userOnly.PUT("/loans/:id/action", r.container.LoanHandler.ProcessAction)
 	}
 
 	// only admin can access
