@@ -1,4 +1,4 @@
-# HRIS App
+# Base Karya
 
 A modern, full-stack Human Resource Information System with a React frontend and Go backend.
 <img width="2310" height="1044" alt="Screenshot 2026-01-11 115810" src="https://github.com/user-attachments/assets/30082270-5577-44d8-9aec-1d2ad17932a4" />
@@ -27,8 +27,8 @@ docker compose up -d --build
 
 **Access the application:**
 
-- Main Application: http://hris.local (add to `/etc/hosts`: `127.0.0.1 hris.local`)
-- API Health Check: http://hris.local/api/v1/health
+- Main Application: http://basekarya.local (add to `/etc/hosts`: `127.0.0.1 hris.local`)
+- API Health Check: http://basekarya.local/api/v1/health
 
 **Stop services:**
 
@@ -175,8 +175,8 @@ For Windows:
 notepad C:\Windows\System32\drivers\etc\hosts
 
 # Add these lines:
-127.0.0.1 hris.local
-127.0.0.1 storage.hris.local
+127.0.0.1 basekarya.local
+127.0.0.1 storage.basekarya.local
 ```
 
 ### Customizing NGINX Configuration
