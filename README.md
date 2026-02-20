@@ -1,13 +1,8 @@
 # BaseKarya
 
 A modern, full-stack Human Resource Information System with a React frontend and Go backend.
-<img width="2310" height="1044" alt="Screenshot 2026-01-11 115810" src="https://github.com/user-attachments/assets/30082270-5577-44d8-9aec-1d2ad17932a4" />
-<img width="2544" height="904" alt="Screenshot 2026-01-11 115822" src="https://github.com/user-attachments/assets/4e0970ab-5d48-4dbb-8730-15ab6508c36d" />
-<img width="2527" height="904" alt="Screenshot 2026-01-11 115912" src="https://github.com/user-attachments/assets/0ba8045e-794f-4364-8176-10fd6b56e895" />
+<img width="2428" height="1202" alt="image" src="https://github.com/user-attachments/assets/2c54e865-2c6d-47cc-8cc1-881a688a22eb" />
 
-<img width="2505" height="944" alt="Screenshot 2026-01-21 201531" src="https://github.com/user-attachments/assets/7a3a9c94-ce67-4204-bedd-05facdf986c5" />
-<img width="1651" height="851" alt="Screenshot 2026-01-21 201538" src="https://github.com/user-attachments/assets/7396488b-0842-4f1a-aab6-f522d896ba79" />
-<img width="1681" height="937" alt="Screenshot 2026-01-21 201552" src="https://github.com/user-attachments/assets/aa9ba4d0-a2a3-4ffd-af5e-fe7ae48a9592" />
 
 ## Quick Start
 
