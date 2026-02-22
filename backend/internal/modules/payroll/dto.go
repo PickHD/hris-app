@@ -35,18 +35,21 @@ type PayrollListResponse struct {
 }
 
 type PayrollDetailResponse struct {
-	ID             uint      `json:"id"`
-	EmployeeID     uint      `json:"employee_id"`
-	EmployeeName   string    `json:"employee_name"`
-	EmployeeNIK    string    `json:"employee_nik"`
-	PeriodDate     string    `json:"period_date"`
-	BaseSalary     float64   `json:"base_salary"`
-	TotalAllowance float64   `json:"total_allowance"`
-	TotalDeduction float64   `json:"total_deduction"`
-	NetSalary      float64   `json:"net_salary"`
-	Status         string    `json:"status"`
-	CreatedAt      time.Time `json:"created_at"`
-	Details        []Detail  `json:"details"`
+	ID                        uint      `json:"id"`
+	EmployeeID                uint      `json:"employee_id"`
+	EmployeeName              string    `json:"employee_name"`
+	EmployeeNIK               string    `json:"employee_nik"`
+	EmployeeBankNumber        string    `json:"employee_bank_number"`
+	EmployeeBankName          string    `json:"employee_bank_name"`
+	EmployeeBankAccountHolder string    `json:"employee_bank_account_holder"`
+	PeriodDate                string    `json:"period_date"`
+	BaseSalary                float64   `json:"base_salary"`
+	TotalAllowance            float64   `json:"total_allowance"`
+	TotalDeduction            float64   `json:"total_deduction"`
+	NetSalary                 float64   `json:"net_salary"`
+	Status                    string    `json:"status"`
+	CreatedAt                 time.Time `json:"created_at"`
+	Details                   []Detail  `json:"details"`
 }
 
 type Detail struct {

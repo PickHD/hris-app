@@ -81,7 +81,7 @@ func NewContainer() (*Container, error) {
 	authSvc := auth.NewService(userRepo, bcrypt, jwt)
 	attendanceSvc := attendance.NewService(attendanceRepo, userRepo, storage, geocodeWorker, transactionManager)
 	masterSvc := master.NewService(masterRepo)
-	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email)
+	payrollSvc := payroll.NewService(payrollRepo, userRepo, reimburseRepo, attendanceRepo, companyRepo, notificationSvc, transactionManager, httpClient.GetClient(), email, loanRepo)
 	leaveSvc := leave.NewService(leaveRepo, storage, notificationSvc, userRepo, transactionManager)
 	userSvc := user.NewService(userRepo, bcrypt, storage, leaveSvc, transactionManager)
 	reimburseSvc := reimbursement.NewService(reimburseRepo, storage, notificationSvc, userRepo, transactionManager)

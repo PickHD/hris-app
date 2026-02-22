@@ -6,6 +6,7 @@ export interface Loan {
   employee_id: number;
   employee_name?: string;
   employee_nik?: string;
+  employee_bank_number?: string;
 
   total_amount: number;
   installment_amount: number;

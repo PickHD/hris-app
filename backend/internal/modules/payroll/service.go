@@ -1,14 +1,14 @@
 package payroll
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/logger"
 	"basekarya-backend/pkg/response"
 	"basekarya-backend/pkg/utils"
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -35,6 +35,7 @@ type service struct {
 	transactionManager infrastructure.TransactionManager
 	client             *http.Client
 	email              EmailProvider
+	loan               LoanProvider
 }
 
 func NewService(repo Repository,
@@ -45,14 +46,20 @@ func NewService(repo Repository,
 	notification NotificationProvider,
 	transactionManager infrastructure.TransactionManager,
 	client *http.Client,
-	email EmailProvider) Service {
-	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email}
+	email EmailProvider,
+	loan LoanProvider) Service {
+	return &service{repo, user, reimbursement, attendance, company, notification, transactionManager, client, email, loan}
 }
 
 func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*GenerateResponse, error) {
 	employees, err := s.user.FindAllEmployeeActive(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch all employee active: %w", err)
+	}
+
+	employeeIds := make([]uint, len(employees))
+	for i, emp := range employees {
+		employeeIds[i] = emp.ID
 	}
 
 	existingPayrollMap, err := s.repo.GetExistingEmployeeID(req.Month, req.Year)
@@ -68,6 +75,11 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 	reimburseMap, err := s.reimbursement.GetBulkApprovedAmount(ctx, req.Month, req.Year)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch bulk approved amount: %w", err)
+	}
+
+	loanMap, err := s.loan.GetBulkActiveLoansByEmployeeIds(ctx, employeeIds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch bulk active loans by employee ids: %w", err)
 	}
 
 	successCount := 0
@@ -86,11 +98,16 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		totalLateMinutes := attendanceMap[emp.ID]
 		reimburseAmount := reimburseMap[emp.UserID]
 
+		// calculate loan
+		loanData := loanMap[emp.ID]
+		loanAmount := loanData.InstallmentAmount
+		loanData.RemainingAmount -= loanAmount
+
 		// calculate net salary
 		latePenaltyAmount := float64(totalLateMinutes * constants.PenaltyPerMinuteLate)
-		totalAllowance := reimburseAmount
-		totalDeduction := latePenaltyAmount
-		netSalary := baseSalary + totalAllowance - totalDeduction
+		totalAllowance := baseSalary + reimburseAmount
+		totalDeduction := latePenaltyAmount + loanAmount
+		netSalary := totalAllowance - totalDeduction
 
 		// construct object
 		payroll := Payroll{
@@ -113,7 +130,7 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 		// check if reimburse amount not zero
 		if reimburseAmount > 0 {
 			payroll.Details = append(payroll.Details, PayrollDetail{
-				Title:  "Reimbursement Approved",
+				Title:  "Reimbursement",
 				Type:   constants.DetailTypeAllowance,
 				Amount: reimburseAmount,
 			})
@@ -125,6 +142,15 @@ func (s *service) GenerateAll(ctx context.Context, req *GenerateRequest) (*Gener
 				Title:  fmt.Sprintf("Potongan Terlambat (%d menit)", totalLateMinutes),
 				Type:   constants.DetailTypeDeduction,
 				Amount: latePenaltyAmount,
+			})
+		}
+
+		// check if loan amount not zero
+		if loanAmount > 0 {
+			payroll.Details = append(payroll.Details, PayrollDetail{
+				Title:  "Potongan Kasbon",
+				Type:   constants.DetailTypeDeduction,
+				Amount: loanAmount,
 			})
 		}
 
@@ -211,18 +237,21 @@ func (s *service) GetDetail(ctx context.Context, id uint) (*PayrollDetailRespons
 	}
 
 	payrollDetail := PayrollDetailResponse{
-		ID:             payroll.ID,
-		EmployeeID:     emp.ID,
-		EmployeeName:   emp.FullName,
-		EmployeeNIK:    emp.NIK,
-		PeriodDate:     payroll.PeriodDate.Format(constants.DefaultTimeFormat),
-		BaseSalary:     payroll.BaseSalary,
-		TotalAllowance: payroll.TotalAllowance,
-		TotalDeduction: payroll.TotalDeduction,
-		NetSalary:      payroll.NetSalary,
-		Status:         string(payroll.Status),
-		CreatedAt:      payroll.CreatedAt,
-		Details:        details,
+		ID:                        payroll.ID,
+		EmployeeID:                emp.ID,
+		EmployeeName:              emp.FullName,
+		EmployeeNIK:               emp.NIK,
+		EmployeeBankNumber:        emp.BankAccountNumber,
+		EmployeeBankName:          emp.BankName,
+		EmployeeBankAccountHolder: emp.BankAccountHolder,
+		PeriodDate:                payroll.PeriodDate.Format(constants.DefaultTimeFormat),
+		BaseSalary:                payroll.BaseSalary,
+		TotalAllowance:            payroll.TotalAllowance,
+		TotalDeduction:            payroll.TotalDeduction,
+		NetSalary:                 payroll.NetSalary,
+		Status:                    string(payroll.Status),
+		CreatedAt:                 payroll.CreatedAt,
+		Details:                   details,
 	}
 
 	return &payrollDetail, nil
@@ -463,8 +492,38 @@ func (s *service) MarkAsPaid(ctx context.Context, id uint) error {
 			return err
 		}
 
+		if payroll.Status == constants.PayrollStatusPaid {
+			return nil
+		}
+
 		if err := s.repo.UpdateStatus(ctx, id, constants.PayrollStatusPaid); err != nil {
 			return err
+		}
+
+		var deductedLoan float64
+		for _, detail := range payroll.Details {
+			if detail.Title == "Potongan Kasbon" && detail.Type == constants.DetailTypeDeduction {
+				deductedLoan += detail.Amount
+			}
+		}
+
+		if deductedLoan > 0 {
+			loanMap, err := s.loan.GetBulkActiveLoansByEmployeeIds(ctx, []uint{payroll.EmployeeID})
+			if err != nil {
+				return fmt.Errorf("failed to fetch active loan: %w", err)
+			}
+
+			if activeLoan, exists := loanMap[payroll.EmployeeID]; exists {
+				activeLoan.RemainingAmount -= deductedLoan
+				if activeLoan.RemainingAmount <= 0 {
+					activeLoan.RemainingAmount = 0
+					activeLoan.Status = constants.LoanStatusPaidOff
+				}
+
+				if err := s.loan.Update(ctx, &activeLoan); err != nil {
+					return fmt.Errorf("failed to update loan status: %w", err)
+				}
+			}
 		}
 
 		go func() {

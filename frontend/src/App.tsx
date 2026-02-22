@@ -13,6 +13,7 @@ import ProfilePage from "@/pages/profile/ProfilePage";
 import AttendanceHistoryPage from "@/pages/dashboard/AttendanceHistoryPage";
 
 import ReimbursementListPage from "@/pages/reimbursement/ReimbursementListPage";
+import LoanListPage from "@/pages/loan/LoanListPage";
 
 // Pages - Admin
 import EmployeeListPage from "@/pages/admin/EmployeeListPage";
@@ -54,6 +55,10 @@ function App() {
 
           <Route path="reimbursement">
             <Route index element={<ReimbursementListPage />} />
+          </Route>
+
+          <Route path="loan">
+            <Route index element={<LoanListPage />} />
           </Route>
 
           <Route path="leave">

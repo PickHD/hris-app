@@ -67,14 +67,18 @@ func (r *repository) FindAll(ctx context.Context, filter LoanFilter) ([]Loan, in
 	var loans []Loan
 	var total int64
 
-	query := db.Model(&Loan{})
+	query := db.Model(&Loan{}).
+		Joins("JOIN users ON users.id = loans.user_id").
+		Joins("JOIN employees ON employees.id = loans.employee_id").
+		Preload("User").
+		Preload("Employee")
 
 	if filter.UserID > 0 {
-		query = query.Where("user_id = ?", filter.UserID)
+		query = query.Where("users.id = ?", filter.UserID)
 	}
 
 	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
+		query = query.Where("loans.status = ?", filter.Status)
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -85,7 +89,7 @@ func (r *repository) FindAll(ctx context.Context, filter LoanFilter) ([]Loan, in
 	err := query.
 		Limit(filter.Limit).
 		Offset(offset).
-		Order("created_at DESC").
+		Order("loans.created_at DESC").
 		Find(&loans).Error
 
 	return loans, total, err
