@@ -9,4 +9,5 @@ const (
 	NotificationTypeLeaveApprovalReq     NotificationType = "LEAVE_APPROVAL_REQ"
 	NotificationTypeReimburseApprovalReq NotificationType = "REIMBURSE_APPROVAL_REQ"
 	NotificationTypePayrollPaid          NotificationType = "PAYROLL_PAID"
+	NotificationTypeLoanApprovalReq      NotificationType = "LOAN_APPROVAL_REQ"
 )

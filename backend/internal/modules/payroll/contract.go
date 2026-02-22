@@ -1,9 +1,10 @@
 package payroll
 
 import (
-	"context"
 	"basekarya-backend/internal/modules/company"
+	"basekarya-backend/internal/modules/loan"
 	"basekarya-backend/internal/modules/user"
+	"context"
 )
 
 type UserProvider interface {
@@ -31,4 +32,9 @@ type NotificationProvider interface {
 
 type EmailProvider interface {
 	SendWithAttachment(to, subject, htmlBody, fileName string, attachmentBytes []byte) error
+}
+
+type LoanProvider interface {
+	GetBulkActiveLoansByEmployeeIds(ctx context.Context, ids []uint) (map[uint]loan.Loan, error)
+	Update(ctx context.Context, loan *loan.Loan) error
 }

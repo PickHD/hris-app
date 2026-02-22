@@ -99,6 +99,17 @@ export function PayrollDetailDialog({ payrollId, open, onOpenChange }: Props) {
                   {format(new Date(payroll.created_at), "dd MMM yyyy")}
                 </p>
               </div>
+              {payroll.employee_bank_number && (
+                <div className="col-span-2 pt-2 border-t border-slate-200 mt-2">
+                  <p className="text-slate-500 font-medium mb-1">Informasi Rekening Bank Karyawan:</p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {payroll.employee_bank_name || "-"} - {payroll.employee_bank_number}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    a/n {payroll.employee_bank_account_holder || "-"}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

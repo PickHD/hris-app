@@ -138,7 +138,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-slate-900 font-semibold">
-                  Password
+                  Kata Sandi
                 </FormLabel>
                 <FormControl>
                   <PasswordInput

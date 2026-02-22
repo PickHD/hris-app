@@ -1,11 +1,11 @@
 package reimbursement
 
 import (
-	"context"
-	"fmt"
 	"basekarya-backend/internal/infrastructure"
 	"basekarya-backend/pkg/constants"
 	"basekarya-backend/pkg/response"
+	"context"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -14,9 +14,9 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, req *ReimbursementRequest) error
-	ProcessAction(ctx context.Context, req *ActionRequest) error
 	GetReimburseDetail(ctx context.Context, id uint) (*ReimbursementDetailResponse, error)
 	GetReimbursements(ctx context.Context, filter ReimbursementFilter) ([]ReimbursementListResponse, *response.Meta, error)
+	ProcessAction(ctx context.Context, req *ActionRequest) error
 }
 
 type service struct {

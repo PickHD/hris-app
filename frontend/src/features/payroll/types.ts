@@ -11,6 +11,9 @@ export interface Payroll {
   employee_id: number;
   employee_name: string;
   employee_nik: string;
+  employee_bank_number?: string;
+  employee_bank_name?: string;
+  employee_bank_account_holder?: string;
   period_date: string;
   base_salary: string;
   total_allowance: number;
